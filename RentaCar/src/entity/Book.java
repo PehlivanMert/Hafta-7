@@ -7,7 +7,7 @@ public class Book {
     private int car_id;
     private Car car;
     private String name;
-    private String idno;
+    private String Idno;
     private String mpno;
     private String mail;
     private LocalDate strt_date;
@@ -52,11 +52,11 @@ public class Book {
     }
 
     public String getIdno() {
-        return idno;
+        return Idno;
     }
 
-    public void setIdno(String idno) {
-        this.idno = idno;
+    public void setIdno(String Idno) {
+        this.Idno = Idno;
     }
 
     public String getMpno() {

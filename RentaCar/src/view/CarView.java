@@ -30,7 +30,7 @@ public class CarView extends Layout {
         this.carManager = new CarManager();
         this.modelManager = new ModelManager();
         this.add(contanier);
-        this.GuiInitiliaze(300, 300);
+        this.guiInitiliaze(300, 300);
 
         this.cmb_s_car_color.setModel(new DefaultComboBoxModel<>(Car.Color.values()));
         for (Model model : this.modelManager.findAll()) {

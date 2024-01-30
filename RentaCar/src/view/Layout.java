@@ -9,7 +9,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 public class Layout extends JFrame {
-    public void GuiInitiliaze(int width, int height) {
+    public void guiInitiliaze(int width, int height) {
 
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setTitle("Rent A Car");

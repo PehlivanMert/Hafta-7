@@ -14,8 +14,6 @@ import entity.User;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.MaskFormatter;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.ParseException;
@@ -71,7 +69,7 @@ public class AdminView extends Layout {
         this.modelManager = new ModelManager();
         this.carManager = new CarManager();
         this.add(contanier);
-        this.GuiInitiliaze(1000, 500);
+        this.guiInitiliaze(1000, 500);
         this.user = user;
 
         if (this.user == null) {
@@ -79,31 +77,24 @@ public class AdminView extends Layout {
         }
         this.lbl_welcome.setText("Hoşgeldiniz " + this.user.getUsername());
 
+        //Brand
         loadBrandTable();
         loadBrandComponent();
+
+        //Model
         loadModelTable(null);
         loadModelComponent();
         loadModelFilter();
+
+        //Car
         loadCarTable(null);
         loadCarComponent();
+
+        //Book
+        loadBookingComponent();
         loadBookingTable(null);
         loadBookingFilter();
-        btn_search.addActionListener(e -> {
-            ArrayList<Car> carList  = this.carManager.searchForBooking(
-                    fld_start_date.getText(),
-                    fld_finish_date.getText(),
-                    (Model.Type) cmb_booking_type.getSelectedItem(),
-                    (Model.Gear) cmb_booking_gear.getSelectedItem(),
-                    (Model.Fuel) cmb_booking_fuel.getSelectedItem()
-            );
 
-            ArrayList<Object[]> carBookingRow = this.carManager.getForTable(this.col_car.length, carList);
-
-            loadBookingTable(carBookingRow);
-        });
-        btn_cancel_booking.addActionListener(e -> {
-            loadBookingFilter();
-        });
     }
 
     public void loadBrandComponent() {
@@ -229,8 +220,6 @@ public class AdminView extends Layout {
         }
         createTable(this.tmdl_model, this.tbl_model, col_model, modelList);
     }
-
-
     public void loadModelFilter() {
         this.cmb_s_model_type.setModel(new DefaultComboBoxModel<>(Model.Type.values()));
         this.cmb_s_model_type.setSelectedItem(null);
@@ -240,7 +229,6 @@ public class AdminView extends Layout {
         this.cmb_s_model_fuel.setSelectedItem(null);
         loadModelFilterBrand();
     }
-
     public void loadModelFilterBrand() {
         this.cmb_s_model_brand.removeAllItems();
         for (Brand obj : brandManager.findAll()) {
@@ -248,7 +236,6 @@ public class AdminView extends Layout {
         }
         this.cmb_s_model_brand.setSelectedItem(null);
     }
-
     private void loadCarComponent() {
         tableSelectedRow(this.tbl_car);
 
@@ -288,7 +275,6 @@ public class AdminView extends Layout {
         this.tbl_car.setComponentPopupMenu(car_menu);
 
     }
-
     public void loadCarTable(ArrayList<Object[]> carList) {
         col_car = new Object[]{"Araç ID", "Marka", "Model", "Plaka", "Renk", "KM", "Yıl", "Tip", "Yakıt Türü", "Vites"};
         if (carList == null) {
@@ -297,44 +283,46 @@ public class AdminView extends Layout {
         createTable(this.tmdl_car, this.tbl_car, col_car, carList);
     }
 
-   /* private void loadBookingComponent() {
+    private void loadBookingComponent() {
         tableSelectedRow(this.tbl_book);
 
         this.book_menu = new JPopupMenu();
         this.book_menu.add("Rezervasyon Yap").addActionListener(e -> {
-            BookView bookView = new BookView(new Book());
-            bookView.addWindowListener(new WindowAdapter() {
+
+            int selectCarId = this.getTableSelectedRow(this.tbl_book,0);
+            BookingView bookingView = new BookingView(
+                    this.carManager.getById(selectCarId),
+                    this.fld_start_date.getText(),
+                    this.fld_finish_date.getText()
+            );
+            bookingView.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosed(WindowEvent e) {
                     loadBookingTable(null);
+                    loadBookingFilter();
                 }
             });
         });
 
-
-        this.car_menu.add("Güncelle").addActionListener(e -> {
-            int selectCarId = this.getTableSelectedRow(this.tbl_car, 0);
-            CarView carView = new CarView(this.carManager.getById(selectCarId));
-            carView.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosed(WindowEvent e) {
-                    loadCarTable(null);
-                }
-            });
-        });
-        this.car_menu.add("Sil").addActionListener(e -> {
-            if (Helper.confirm("sure")) {
-                int selectCarId = this.getTableSelectedRow(this.tbl_car, 0);
-                if (this.carManager.delete(selectCarId)) {
-                    Helper.showMsg("done");
-                    loadCarTable(null);
-                } else {
-                    Helper.showMsg("error");
-                }
-            }
-        });
         this.tbl_book.setComponentPopupMenu(book_menu);
-    }   */
+
+        btn_search.addActionListener(e -> {
+            ArrayList<Car> carList  = this.carManager.searchForBooking(
+                    fld_start_date.getText(),
+                    fld_finish_date.getText(),
+                    (Model.Type) cmb_booking_type.getSelectedItem(),
+                    (Model.Gear) cmb_booking_gear.getSelectedItem(),
+                    (Model.Fuel) cmb_booking_fuel.getSelectedItem()
+            );
+
+            ArrayList<Object[]> carBookingRow = this.carManager.getForTable(this.col_car.length, carList);
+
+            loadBookingTable(carBookingRow);
+        });
+        btn_cancel_booking.addActionListener(e -> {
+            loadBookingFilter();
+        });
+        }
 
     public void loadBookingTable(ArrayList<Object[]> carList) {
         Object[] col_booking_list = {"ID","Marka","Model","Plaka","Renk","KM","Yıl","Tip","Yakıt Türü","Vites"};

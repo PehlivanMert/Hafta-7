@@ -39,7 +39,7 @@ public class BookDao {
                 "(" +
                 "book_car_id," +
                 "book_name," +
-                "book_idno," +
+                "book_Idno," +
                 "book_mpno," +
                 "book_mail," +
                 "book_strt_date," +
@@ -70,28 +70,6 @@ public class BookDao {
         return true;
     }
 
-   /* public boolean update(Book book) {
-        String query = "UPDATE public.book SET " +
-                "car_model_id = ? ," +
-                "car_color = ? , " +
-                "car_km = ? , " +
-                "car_plate = ?  " +
-                "WHERE car_id = ?";
-
-
-        try {
-            PreparedStatement pr = this.conn.prepareStatement(query);
-            pr.setInt(1, car.getModel_id());
-            pr.setString(2, car.getColor().toString());
-            pr.setInt(3, car.getKm());
-            pr.setString(4, car.getPlate());
-            pr.setInt(5, car.getId());
-            return pr.executeUpdate() != -1;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return true;
-    }*/
 
     public boolean delete(int book_id) {
         String query = "DELETE FROM public.book WHERE book_id = ?";
@@ -114,7 +92,7 @@ public class BookDao {
         book.setStrt_date(LocalDate.parse(rs.getString("book_strt_date")));
         book.setFnsh_date(LocalDate.parse(rs.getString("book_fnsh_date")));
         book.setCar(this.carDao.getById(rs.getInt("book_car_id")));
-        book.setIdno(rs.getString("book_idno"));
+        book.setIdno(rs.getString("book_Idno"));
         book.setMpno(rs.getString("book_mpno"));
         book.setMail(rs.getString("book_mail"));
         book.setNote(rs.getString("book_note"));

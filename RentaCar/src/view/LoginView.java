@@ -21,7 +21,7 @@ public class LoginView extends Layout {
     public LoginView() {
         this.userManager = new UserManager();
         this.add(container);
-        this.GuiInitiliaze(400, 400);
+        this.guiInitiliaze(400, 400);
 
         btn_login.addActionListener(e -> {
             JTextField[] checkFieldList = {this.fld_username, this.fld_pass};

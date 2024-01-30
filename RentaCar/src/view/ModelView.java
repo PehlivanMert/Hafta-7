@@ -28,7 +28,7 @@ public class ModelView extends Layout {
         this.modelManager = new ModelManager();
         this.brandManager = new BrandManager();
         this.add(contanier);
-        this.GuiInitiliaze(300, 500);
+        this.guiInitiliaze(300, 500);
 
         for (Brand brand : this.brandManager.findAll()) {
             this.cmb_brand.addItem(new ComboItem(brand.getId(), brand.getName()));

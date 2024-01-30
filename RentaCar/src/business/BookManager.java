@@ -2,9 +2,8 @@ package business;
 
 import core.Helper;
 import dao.BookDao;
-import dao.BookDao;
 import entity.Book;
-import entity.Book;
+
 
 import java.util.ArrayList;
 
