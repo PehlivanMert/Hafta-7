@@ -1,5 +1,6 @@
 package view;
 
+import business.BookManager;
 import business.BrandManager;
 import business.CarManager;
 import business.ModelManager;
@@ -12,8 +13,12 @@ import entity.User;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.MaskFormatter;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.ParseException;
 import java.util.ArrayList;
 
 public class AdminView extends Layout {
@@ -35,18 +40,29 @@ public class AdminView extends Layout {
     private JButton btn_cncl_model;
     private JTable tbl_car;
     private JScrollPane scrl_car;
+    private JPanel pnl_booking;
+    private JTable tbl_book;
+    private JComboBox cmb_booking_type;
     private JComboBox cmb_s_car_plate;
-    private JComboBox comboBox2;
+    private JComboBox cmb_booking_fuel;
+    private JComboBox cmb_booking_gear;
+    private JFormattedTextField fld_start_date;
+    private JFormattedTextField fld_finish_date;
+    private JButton btn_search;
+    private JButton btn_cancel_booking;
     private User user;
     private DefaultTableModel tmdl_brand = new DefaultTableModel();
     private DefaultTableModel tmdl_model = new DefaultTableModel();
     private DefaultTableModel tmdl_car = new DefaultTableModel();
+    private DefaultTableModel tmdl_book = new DefaultTableModel();
     private BrandManager brandManager;
     private ModelManager modelManager;
     private CarManager carManager;
+    private BookManager bookManager;
     private JPopupMenu brand_menu;
     private JPopupMenu model_menu;
     private JPopupMenu car_menu;
+    private JPopupMenu book_menu;
     private Object[] col_model;
     private Object[] col_car;
 
@@ -70,6 +86,77 @@ public class AdminView extends Layout {
         loadModelFilter();
         loadCarTable(null);
         loadCarComponent();
+        loadBookingTable(null);
+        loadBookingFilter();
+        btn_search.addActionListener(e -> {
+            ArrayList<Car> carList  = this.carManager.searchForBooking(
+                    fld_start_date.getText(),
+                    fld_finish_date.getText(),
+                    (Model.Type) cmb_booking_type.getSelectedItem(),
+                    (Model.Gear) cmb_booking_gear.getSelectedItem(),
+                    (Model.Fuel) cmb_booking_fuel.getSelectedItem()
+            );
+
+            ArrayList<Object[]> carBookingRow = this.carManager.getForTable(this.col_car.length, carList);
+
+            loadBookingTable(carBookingRow);
+        });
+        btn_cancel_booking.addActionListener(e -> {
+            loadBookingFilter();
+        });
+    }
+
+    public void loadBrandComponent() {
+        tableSelectedRow(this.tbl_brand);
+
+        this.brand_menu = new JPopupMenu();
+        this.brand_menu.add("Yeni").addActionListener(e -> {
+            BrandView brandView = new BrandView(null);
+            brandView.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    loadBrandTable();
+                    loadModelTable(null);
+                    loadModelFilterBrand();
+                }
+            });
+        });
+        this.brand_menu.add("Güncelle").addActionListener(e -> {
+            int selectBrandId = this.getTableSelectedRow(this.tbl_brand, 0);
+            BrandView brandView = new BrandView(this.brandManager.getById(selectBrandId));
+            brandView.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    loadBrandTable();
+                    loadModelTable(null);
+                    loadModelFilterBrand();
+                    loadCarTable(null);
+                }
+            });
+        });
+
+        this.brand_menu.add("Sil").addActionListener(e -> {
+            if (Helper.confirm("sure")) {
+                int selectBrandId = this.getTableSelectedRow(this.tbl_brand, 0);
+                if (this.brandManager.delete(selectBrandId)) {
+                    Helper.showMsg("done");
+                    loadBrandTable();
+                    loadModelTable(null);
+                    loadModelFilterBrand();
+                    loadCarTable(null);
+                } else {
+                    Helper.showMsg("error");
+                }
+            }
+        });
+        this.tbl_brand.setComponentPopupMenu(brand_menu);
+
+    }
+
+    public void loadBrandTable() {
+        Object[] col_brand = {"Marka ID", "Marka Adı"};
+        ArrayList<Object[]> brandList = this.brandManager.getForTable(col_brand.length);
+        this.createTable(this.tmdl_brand, this.tbl_brand, col_brand, brandList);
     }
 
     private void loadModelComponent() {
@@ -135,6 +222,32 @@ public class AdminView extends Layout {
             loadModelTable(null);
         });
     }
+    public void loadModelTable(ArrayList<Object[]> modelList) {
+        this.col_model = new Object[]{"Model ID", "Marka", "Model Adı", "Model Tipi", "Model Yılı", "Yakıt Tipi", "Vites Tipi"};
+        if (modelList == null) {
+            modelList = this.modelManager.getForTable(this.col_model.length, this.modelManager.findAll());
+        }
+        createTable(this.tmdl_model, this.tbl_model, col_model, modelList);
+    }
+
+
+    public void loadModelFilter() {
+        this.cmb_s_model_type.setModel(new DefaultComboBoxModel<>(Model.Type.values()));
+        this.cmb_s_model_type.setSelectedItem(null);
+        this.cmb_s_model_gear.setModel(new DefaultComboBoxModel<>(Model.Gear.values()));
+        this.cmb_s_model_gear.setSelectedItem(null);
+        this.cmb_s_model_fuel.setModel(new DefaultComboBoxModel<>(Model.Fuel.values()));
+        this.cmb_s_model_fuel.setSelectedItem(null);
+        loadModelFilterBrand();
+    }
+
+    public void loadModelFilterBrand() {
+        this.cmb_s_model_brand.removeAllItems();
+        for (Brand obj : brandManager.findAll()) {
+            this.cmb_s_model_brand.addItem(new ComboItem(obj.getId(), obj.getName()));
+        }
+        this.cmb_s_model_brand.setSelectedItem(null);
+    }
 
     private void loadCarComponent() {
         tableSelectedRow(this.tbl_car);
@@ -174,94 +287,74 @@ public class AdminView extends Layout {
         });
         this.tbl_car.setComponentPopupMenu(car_menu);
 
-
     }
+
     public void loadCarTable(ArrayList<Object[]> carList) {
-        this.col_car = new Object[]{"Araç ID", "Marka", "Model", "Plaka", "Renk", "KM", "Yıl", "Tip", "Yakıt Türü", "Vites"};
+        col_car = new Object[]{"Araç ID", "Marka", "Model", "Plaka", "Renk", "KM", "Yıl", "Tip", "Yakıt Türü", "Vites"};
         if (carList == null) {
             carList = this.carManager.getForTable(this.col_car.length, this.carManager.findAll());
         }
         createTable(this.tmdl_car, this.tbl_car, col_car, carList);
     }
 
-    public void loadModelTable(ArrayList<Object[]> modelList) {
-        this.col_model = new Object[]{"Model ID", "Marka", "Model Adı", "Model Tipi", "Model Yılı", "Yakıt Tipi", "Vites Tipi"};
-        if (modelList == null) {
-            modelList = this.modelManager.getForTable(this.col_model.length, this.modelManager.findAll());
-        }
-        createTable(this.tmdl_model, this.tbl_model, col_model, modelList);
-    }
+   /* private void loadBookingComponent() {
+        tableSelectedRow(this.tbl_book);
 
-
-    public void loadModelFilter() {
-        this.cmb_s_model_type.setModel(new DefaultComboBoxModel<>(Model.Type.values()));
-        this.cmb_s_model_type.setSelectedItem(null);
-        this.cmb_s_model_gear.setModel(new DefaultComboBoxModel<>(Model.Gear.values()));
-        this.cmb_s_model_gear.setSelectedItem(null);
-        this.cmb_s_model_fuel.setModel(new DefaultComboBoxModel<>(Model.Fuel.values()));
-        this.cmb_s_model_fuel.setSelectedItem(null);
-        loadModelFilterBrand();
-    }
-
-    public void loadModelFilterBrand() {
-        this.cmb_s_model_brand.removeAllItems();
-        for (Brand obj : brandManager.findAll()) {
-            this.cmb_s_model_brand.addItem(new ComboItem(obj.getId(), obj.getName()));
-        }
-        this.cmb_s_model_brand.setSelectedItem(null);
-    }
-
-    public void loadBrandComponent() {
-        tableSelectedRow(this.tbl_brand);
-
-        this.brand_menu = new JPopupMenu();
-        this.brand_menu.add("Yeni").addActionListener(e -> {
-            BrandView brandView = new BrandView(null);
-            brandView.addWindowListener(new WindowAdapter() {
+        this.book_menu = new JPopupMenu();
+        this.book_menu.add("Rezervasyon Yap").addActionListener(e -> {
+            BookView bookView = new BookView(new Book());
+            bookView.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosed(WindowEvent e) {
-                    loadBrandTable();
-                    loadModelTable(null);
-                    loadModelFilterBrand();
+                    loadBookingTable(null);
                 }
             });
         });
-        this.brand_menu.add("Güncelle").addActionListener(e -> {
-            int selectBrandId = this.getTableSelectedRow(this.tbl_brand, 0);
-            BrandView brandView = new BrandView(this.brandManager.getById(selectBrandId));
-            brandView.addWindowListener(new WindowAdapter() {
+
+
+        this.car_menu.add("Güncelle").addActionListener(e -> {
+            int selectCarId = this.getTableSelectedRow(this.tbl_car, 0);
+            CarView carView = new CarView(this.carManager.getById(selectCarId));
+            carView.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosed(WindowEvent e) {
-                    loadBrandTable();
-                    loadModelTable(null);
-                    loadModelFilterBrand();
                     loadCarTable(null);
                 }
             });
         });
-
-        this.brand_menu.add("Sil").addActionListener(e -> {
+        this.car_menu.add("Sil").addActionListener(e -> {
             if (Helper.confirm("sure")) {
-                int selectBrandId = this.getTableSelectedRow(this.tbl_brand, 0);
-                if (this.brandManager.delete(selectBrandId)) {
+                int selectCarId = this.getTableSelectedRow(this.tbl_car, 0);
+                if (this.carManager.delete(selectCarId)) {
                     Helper.showMsg("done");
-                    loadBrandTable();
-                    loadModelTable(null);
-                    loadModelFilterBrand();
                     loadCarTable(null);
                 } else {
                     Helper.showMsg("error");
                 }
             }
         });
-        this.tbl_brand.setComponentPopupMenu(brand_menu);
+        this.tbl_book.setComponentPopupMenu(book_menu);
+    }   */
 
+    public void loadBookingTable(ArrayList<Object[]> carList) {
+        Object[] col_booking_list = {"ID","Marka","Model","Plaka","Renk","KM","Yıl","Tip","Yakıt Türü","Vites"};
+        createTable(this.tmdl_book, this.tbl_book, col_booking_list, carList);
     }
 
-    public void loadBrandTable() {
-        Object[] col_brand = {"Marka ID", "Marka Adı"};
-        ArrayList<Object[]> brandList = this.brandManager.getForTable(col_brand.length);
-        this.createTable(this.tmdl_brand, this.tbl_brand, col_brand, brandList);
+    public void loadBookingFilter() {
+        this.cmb_booking_type.setModel(new DefaultComboBoxModel<>(Model.Type.values()));
+        this.cmb_booking_type.setSelectedItem(null);
+        this.cmb_booking_gear.setModel(new DefaultComboBoxModel<>(Model.Gear.values()));
+        this.cmb_booking_gear.setSelectedItem(null);
+        this.cmb_booking_fuel.setModel(new DefaultComboBoxModel<>(Model.Fuel.values()));
+        this.cmb_booking_fuel.setSelectedItem(null);
+    }
+
+    private void createUIComponents() throws ParseException {
+        this.fld_start_date = new JFormattedTextField(new MaskFormatter("##/##/####"));
+        this.fld_start_date.setText("10/10/1993");
+        this.fld_finish_date = new JFormattedTextField(new MaskFormatter("##/##/####"));
+        this.fld_finish_date.setText("10/10/2023");
     }
 }
 
