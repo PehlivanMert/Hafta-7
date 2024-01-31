@@ -3,12 +3,14 @@ package dao;
 import core.Db;
 import entity.Book;
 import entity.Car;
+import entity.Model;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class BookDao {
+
     private final CarDao carDao;
     private Connection conn;
 
@@ -19,6 +21,22 @@ public class BookDao {
 
     public ArrayList<Book> findAll() {
         return this.selectByQuery("SELECT * FROM public.book ORDER BY book_id ASC");
+    }
+
+    public Book getById(int id) {
+        Book obj = null;
+        String query = "SELECT * FROM public.book WHERE book_id = ?";
+        try {
+            PreparedStatement pr = this.conn.prepareStatement(query);
+            pr.setInt(1, id);
+            ResultSet rs = pr.executeQuery();
+            if (rs.next()) {
+                obj = this.match(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return obj;
     }
 
     public ArrayList<Book> selectByQuery(String query) {
@@ -71,13 +89,47 @@ public class BookDao {
     }
 
 
+    public boolean update(Book book) {
+        String query = "UPDATE public.book SET " +
+                "book_car_id = ? ," +
+                "book_name = ? , " +
+                "book_idno = ? , " +
+                "book_mpno = ? , " +
+                "book_mail = ? , " +
+                "book_strt_date = ? , " +
+                "book_fnsh_date = ? , " +
+                "book_prc = ? , " +
+                "book_note = ? " +
+                "WHERE book_id = ?";
+
+
+        try {
+            PreparedStatement pr = this.conn.prepareStatement(query);
+            pr.setInt(1, book.getCar_id());
+            pr.setString(2, book.getName());
+            pr.setString(3, book.getIdno());
+            pr.setString(4, book.getMpno());
+            pr.setString(5, book.getMail());
+            pr.setDate(6, Date.valueOf(book.getStrt_date()));
+            pr.setDate(7, Date.valueOf(book.getFnsh_date()));
+            pr.setInt(8, book.getPrc());
+            pr.setString(9, book.getNote());
+            pr.setInt(10, book.getId());
+            return pr.executeUpdate() != -1;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return true;
+
+    }
+
     public boolean delete(int book_id) {
         String query = "DELETE FROM public.book WHERE book_id = ?";
         try {
             PreparedStatement pr = this.conn.prepareStatement(query);
             pr.setInt(1, book_id);
             return pr.executeUpdate() != -1;
-        } catch (SQLException e) {
+        }catch (SQLException e) {
             e.printStackTrace();
         }
         return true;

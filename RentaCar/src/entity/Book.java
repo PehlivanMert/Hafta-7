@@ -1,5 +1,7 @@
 package entity;
 
+import business.ReservationManager;
+
 import java.time.LocalDate;
 
 public class Book {
